@@ -69,7 +69,7 @@ class PartialDependence(FeatureEffect):
         X_mod = X.copy()
         for i, value in enumerate(grid):
             X_mod[feature] = value
-            effect[i] = model.predict(X_mod).mean()
+            effect[i] = model.predict_proba(X_mod)[:, 1].mean()
         if self.centered:
             effect -= effect.mean()
         return pd.DataFrame({"value": grid, "effect": effect})

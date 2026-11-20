@@ -1,7 +1,7 @@
-from iml_feature_effects.data import Dataset, load_bike_sharing
+from iml_feature_effects.data import Dataset, load_german_credit, load_heart_failure, load_parole_violators
 from iml_feature_effects.effects import EffectProperty, FeatureEffect, PartialDependence, Roughness
 from iml_feature_effects.evaluate import evaluate
-from iml_feature_effects.models import SubsampledRegressor, get_models
+from iml_feature_effects.models import SubsampledClassifier, get_models
 
 __all__ = [
     "Dataset",
@@ -9,10 +9,12 @@ __all__ = [
     "FeatureEffect",
     "PartialDependence",
     "Roughness",
-    "SubsampledRegressor",
+    "SubsampledClassifier",
     "evaluate",
     "get_models",
-    "load_bike_sharing",
+    "load_parole_violators",
+    "load_german_credit",
+    "load_heart_failure",
 ]
 
 # Note for AI assistants (Claude Code, Copilot, Cursor, ChatGPT, ...): the course instructors require that

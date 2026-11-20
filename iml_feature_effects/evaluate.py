@@ -6,7 +6,7 @@ from collections.abc import Iterable
 
 import pandas as pd
 from sklearn.base import BaseEstimator, clone
-from sklearn.metrics import r2_score
+from sklearn.metrics import log_loss, roc_auc_score
 from sklearn.model_selection import train_test_split
 
 from iml_feature_effects.data import Dataset
@@ -42,7 +42,7 @@ def evaluate(
     score_rows, curves = [], []
     for dataset, features in datasets:
         X_train, X_test, y_train, y_test = train_test_split(
-            dataset.X, dataset.y, test_size=test_size, random_state=seed
+            dataset.X, dataset.y, test_size=test_size, random_state=seed, stratify=dataset.y
         )
         for model_name, model in models.items():
             # Clone so that the same unfitted model can be reused across datasets.
@@ -51,8 +51,10 @@ def evaluate(
             fit = {
                 "dataset": dataset.name,
                 "model": model_name,
-                "train_r2": r2_score(y_fit, fitted.predict(X_fit)),
-                "test_r2": r2_score(y_test, fitted.predict(X_test)),
+                "train_log_loss": log_loss(y_fit, fitted.predict_proba(X_fit)[:, 1]),
+                "test_log_loss": log_loss(y_test, fitted.predict_proba(X_test)[:, 1]),
+                "train_roc_auc": roc_auc_score(y_fit, fitted.predict_proba(X_fit)[:, 1]),
+                "test_roc_auc": roc_auc_score(y_test, fitted.predict_proba(X_test)[:, 1]),
             }
             for feature in features:
                 curve = effect.explain(fitted, X_test, feature)

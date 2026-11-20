@@ -12,7 +12,15 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from iml_feature_effects import PartialDependence, Roughness, evaluate, get_models, load_bike_sharing
+from iml_feature_effects import (
+    PartialDependence,
+    Roughness,
+    evaluate,
+    get_models,
+    load_german_credit,
+    load_heart_failure,
+    load_parole_violators,
+)
 
 RESULTS = Path("results")
 SEED = 0
@@ -37,7 +45,11 @@ def plot_curves(curves: pd.DataFrame, dataset: str, path: Path) -> None:
 
 def main() -> None:
     scores, curves = evaluate(
-        datasets=[(load_bike_sharing(), ["hour", "temp", "humidity"])],
+        datasets=[
+            (load_parole_violators(), ["age", "time.served", "max.sentence"]),
+            (load_heart_failure(), ["ejection_fraction", "serum_creatinine", "age"]),
+            (load_german_credit(), ["duration", "credit_amount", "age"]),
+        ],
         models=get_models(seed=SEED),
         effect=PartialDependence(),
         properties=[Roughness()],

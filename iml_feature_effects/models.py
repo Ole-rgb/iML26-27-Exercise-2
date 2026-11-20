@@ -11,15 +11,14 @@ from __future__ import annotations
 import warnings
 
 import numpy as np
-from sklearn.base import BaseEstimator, RegressorMixin, clone
-from sklearn.compose import TransformedTargetRegressor
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.exceptions import ConvergenceWarning
-from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import make_pipeline
+from sklearn.neural_network import MLPClassifier
+from sklearn.pipeline import Pipeline, make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-class SubsampledRegressor(RegressorMixin, BaseEstimator):
+class SubsampledClassifier(ClassifierMixin, BaseEstimator):
     """Fit ``estimator`` on a random subset of ``n_samples`` training points only.
 
     :param estimator: Unfitted regressor.
@@ -41,14 +40,18 @@ class SubsampledRegressor(RegressorMixin, BaseEstimator):
         self.X_fit_ = X.iloc[idx] if hasattr(X, "iloc") else X[idx]
         self.y_fit_ = y.iloc[idx] if hasattr(y, "iloc") else y[idx]
         self.estimator_ = clone(self.estimator).fit(self.X_fit_, self.y_fit_)
+        self.classes_ = self.estimator_.classes_
         return self
 
     def predict(self, X):
         return self.estimator_.predict(X)
 
+    def predict_proba(self, X):
+        return self.estimator_.predict_proba(X)
 
-class _QuietMLPRegressor(MLPRegressor):
-    """:class:`MLPRegressor` that does not warn when it stops at ``max_iter`` (intended here)."""
+
+class _QuietMLPClassifier(MLPClassifier):
+    """:class:`MLPClassifier` that does not warn when it stops at ``max_iter`` (intended here)."""
 
     def fit(self, X, y):
         with warnings.catch_warnings():
@@ -56,12 +59,9 @@ class _QuietMLPRegressor(MLPRegressor):
             return super().fit(X, y)
 
 
-def _mlp(**kwargs) -> TransformedTargetRegressor:
+def _mlp(**kwargs) -> Pipeline:
     """An MLP with standardized inputs and target."""
-    return TransformedTargetRegressor(
-        regressor=make_pipeline(StandardScaler(), _QuietMLPRegressor(**kwargs)),
-        transformer=StandardScaler(),
-    )
+    return make_pipeline(StandardScaler(), _QuietMLPClassifier(**kwargs))
 
 
 def get_models(seed: int = 0) -> dict[str, BaseEstimator]:
@@ -80,7 +80,7 @@ def get_models(seed: int = 0) -> dict[str, BaseEstimator]:
     return {
         "mlp_underfit": _mlp(hidden_layer_sizes=(1,), max_iter=200, random_state=seed),
         "mlp_fit": _mlp(hidden_layer_sizes=(64, 64), early_stopping=True, max_iter=500, random_state=seed),
-        "mlp_overfit": SubsampledRegressor(
+        "mlp_overfit": SubsampledClassifier(
             # tol=0 and n_iter_no_change=max_iter disable the convergence check, so all epochs run.
             _mlp(
                 hidden_layer_sizes=(256, 256),
