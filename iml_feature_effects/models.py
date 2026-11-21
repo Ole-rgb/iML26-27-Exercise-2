@@ -77,20 +77,14 @@ def get_models(seed: int = 0) -> dict[str, BaseEstimator]:
     :return: Mapping from model name to unfitted scikit-learn regressor.
     :rtype: dict[str, BaseEstimator]
     """
+    ALPHAS = np.unique(np.concatenate([
+        np.logspace(-4, 0, 6),      # overfit side: 6 points are enough, it's mostly the plateau
+        np.logspace(0, 1.5, 10),    # transition: 1 → ~32, step factor ≈ 1.5 instead of ≈ 3.5
+        [1e2],                      # one point on the constant plateau
+    ]))
     return {
-        "mlp_underfit": _mlp(hidden_layer_sizes=(1,), max_iter=200, random_state=seed),
-        "mlp_fit": _mlp(hidden_layer_sizes=(64, 64), early_stopping=True, max_iter=500, random_state=seed),
-        "mlp_overfit": SubsampledClassifier(
-            # tol=0 and n_iter_no_change=max_iter disable the convergence check, so all epochs run.
-            _mlp(
-                hidden_layer_sizes=(256, 256),
-                alpha=0.0,
-                max_iter=10_000,
-                tol=0.0,
-                n_iter_no_change=10_000,
-                random_state=seed,
-            ),
-            n_samples=20,
-            random_state=seed,
-        ),
+        f"mlp_alpha_{a:.0e}": _mlp(
+            hidden_layer_sizes=(128, 128), alpha=a, max_iter=3000, tol=1e-6, random_state=seed
+        )
+        for a in ALPHAS
     }
